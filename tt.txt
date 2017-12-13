@@ -1,0 +1,53 @@
+package com.cmb.minapp.mweb.business.whcc.action;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.codec.binary.Base64;
+
+import com.cmb.minapp.mweb.action.PageableQueryAction;
+import com.cmb.minapp.mweb.controller.AbstractController;
+import com.csii.minapp.core.datamodel.MTeller;
+import com.csii.minapp.service.db.DBService;
+
+public class WhccWorksCommentMgmtListQueryAction extends PageableQueryAction {
+	private DBService dbService;
+
+	public DBService getDbService() {
+		return dbService;
+	}
+
+	public void setDbService(DBService dbService) {
+		this.dbService = dbService;
+	}
+
+	@Override
+	protected Map handleInner(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		HttpSession session = request.getSession();
+
+		String workstitle = (String) request.getAttribute("workstitle");
+		String author = (String) request.getAttribute("author");
+		Map paramMap = new HashMap();
+		paramMap.put("workstitle", workstitle);
+		paramMap.put("author", author);
+		List whccworksList = getDbService().selectList("whcc.queryWhccWorksCommentMgmtList", paramMap);
+		int recordNumber = (Integer)getDbService().selectOne("whcc.queryWhccWorksCommentMgmtListCount", paramMap);
+		Map map = new HashMap();
+		
+		for(Iterator it = whccworksList.iterator();it.hasNext();){
+			Map info = (Map) it.next();
+			String comment = (String) info.get("comment");
+			info.put("comment", new String(Base64.decodeBase64(comment.getBytes("utf-8"))));
+		}
+		map.put("List", whccworksList);
+		map.put("recordNumber", recordNumber);
+		map.put("pageSize", 10);
+		return map;
+	}
+}
